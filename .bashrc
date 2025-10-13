@@ -1,0 +1,1 @@
+conda activate /mnt/world_foundational_model/gkz/conda/svd

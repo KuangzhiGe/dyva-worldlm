@@ -18,7 +18,6 @@ from torch.distributed.fsdp.wrap import (_module_wrap_policy, _or_policy,
                                         transformer_auto_wrap_policy)
 from torchvision.transforms import Compose, Resize
 
-# 假设这些是你项目中的本地导入
 from prismatic.models.backbones.vision.base_vision import (ImageTransform,
                                                             VisionBackbone,
                                                             unpack_tuple)
@@ -82,7 +81,7 @@ class CompositeImageTransform:
     """一个数据类，用于封装一组模型各自的图像变换。"""
     transforms: Dict[str, ImageTransform]
     is_prismatic: bool = True
-    
+
     def __call__(self, img: Union[Image, List[Image]], **kwargs: str) -> Dict[str, torch.Tensor]:
         """对每个模型的变换都调用一次，返回一个包含所有结果的字典。"""
         if isinstance(img, list):
@@ -91,7 +90,7 @@ class CompositeImageTransform:
                 if name == "svd":
                     transformed_img[name] = transform(img, **kwargs)
                 else:
-                    transformed_img[name] = transform(img[0], **kwargs) 
+                    transformed_img[name] = transform(img[0], **kwargs)
             return transformed_img
         else:
             return {
@@ -118,7 +117,7 @@ class CompositeVisionBackbone(VisionBackbone):
         self.vision_backbone_id = vision_backbone_id
         if self.vision_backbone_id not in COMPOSITE_VISION_BACKBONES:
             raise ValueError(f"Vision backbone ID `{self.vision_backbone_id}` is not defined in COMPOSITE_VISION_BACKBONES.")
-        
+
         model_cfg = COMPOSITE_VISION_BACKBONES[self.vision_backbone_id]
 
         # SVDVisionBackbone只支持 "resize-naive" 策略
@@ -142,7 +141,7 @@ class CompositeVisionBackbone(VisionBackbone):
         svd_featurizer.eval()
         self.featurizers["svd"] = svd_featurizer
         image_transforms["svd"] = self.featurizers["svd"].get_image_transform()
-        
+
         # 2. 动态初始化所有在配置中指定的 ViT 模型
         self.vit_component_keys: List[str] = []
         for model_type in SUPPORTED_VIT_MODELS:
@@ -157,7 +156,7 @@ class CompositeVisionBackbone(VisionBackbone):
 
         # 3. 创建组合的图像变换
         self.image_transform = CompositeImageTransform(transforms=image_transforms)
-        
+
         # 4. 存储第一个ViT模型的数据配置，用于默认分辨率
         self.first_vit_key = self.vit_component_keys[0]
         self.first_vit_data_cfg = timm.data.resolve_model_data_config(self.featurizers[self.first_vit_key])
@@ -188,7 +187,7 @@ class CompositeVisionBackbone(VisionBackbone):
         根据给定的模型类型(siglip/dino/clip)创建视觉骨干和图像变换。
         """
         logger.info(f"Creating Vision Encoder for `{model_type}`...")
-        
+
         # 加载模型
         timm_path_or_url = model_cfg[model_type]
         featurizer = self._create_model_with_retry(timm_path_or_url)
@@ -199,12 +198,12 @@ class CompositeVisionBackbone(VisionBackbone):
         featurizer.forward = unpack_tuple(
             partial(featurizer.get_intermediate_layers, n={len(featurizer.blocks) - 2})
         )
-        
+
         # 加载图像变换
         model_data_cfg = timm.data.resolve_model_data_config(featurizer)
         model_data_cfg["input_size"] = (3, self.default_image_size, self.default_image_size)
         default_transform = timm.data.create_transform(**model_data_cfg, is_training=False)
-        
+
         assert isinstance(default_transform, Compose), "Unexpected `default_image_transform`!"
         assert isinstance(default_transform.transforms[0], Resize)
 
@@ -215,7 +214,7 @@ class CompositeVisionBackbone(VisionBackbone):
                 *default_transform.transforms[1:],
             ]
         )
-        
+
         return featurizer, model_transform
 
     def get_fsdp_wrapping_policy(self) -> Callable:
@@ -265,7 +264,7 @@ class CompositeVisionBackbone(VisionBackbone):
         first_num_patches = next(num_patches_iter)
         assert all(count == first_num_patches for count in num_patches_iter), \
             f"Number of patches must match for concatenation! Got: {patch_counts}"
-        
+
         return first_num_patches
 
     @property

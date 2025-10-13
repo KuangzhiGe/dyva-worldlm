@@ -10,7 +10,7 @@ os.environ['HF_HUB_OFFLINE'] = '1'
 
 # For gated LMs like Llama-2, make sure to request official access, and generate an access token
 
-hf_token = "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" # Path(".hf_token").read_text().strip()
+hf_token = "YOUR_HF_KEY" # Path(".hf_token").read_text().strip()
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 

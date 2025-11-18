@@ -7,7 +7,7 @@
   <a href="https://dyva-worldlm.github.io">
     <img src="https://img.shields.io/badge/Project Page-DyVA--WorldLM-blue" alt="Project Website">
   </a>
-  <a href="https://dyva-worldlm.github.io">
+  <a href="https://huggingface.co/dyva/DyVA-WorldLM">
     <img src="https://img.shields.io/badge/Model Checkpoint-DyVA--WorldLM-6aa84f" alt="Model Checkpoint">
   </a>
 </p>
@@ -154,7 +154,7 @@ High-level overview of dyva-worldlm file-tree:
 
 
 ## Acknowledgements
-This repository is heavily based on the excellent [**Prismatic VLMs**](https://github.com/TRI-ML/prismatic-vlms) codebase. We extend our sincere gratitude to the original authors for their foundational work and well-structured code.
+This repository is based on the excellent [**Prismatic VLMs**](https://github.com/TRI-ML/prismatic-vlms) codebase. We extend our sincere gratitude to the original authors for their foundational work and well-structured code.
 
 ---
 

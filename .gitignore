@@ -154,3 +154,5 @@ assets/
 draw_pics/
 .gradio/
 wm_output/
+infer.py
+eval.sh

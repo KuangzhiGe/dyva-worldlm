@@ -18,23 +18,18 @@ from prismatic.models.backbones.llm.prompting import PromptBuilder, PurePromptBu
 # fmt: off
 QWEN25_MODELS = {
     "qwen25-7b-chat": {
-        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "/mnt/world_foundational_model/gkz/ckpts/hub/qwen25_7B_chat"
+        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "Qwen/Qwen2.5-7B-Instruct"
     },
     "qwen25-7b-pure": {
-        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "/mnt/world_foundational_model/gkz/ckpts/hub/qwen25_7B"
+        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "Qwen/Qwen2.5-7B"
     },
     "qwen25-72b-chat": {
-        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "/mnt/world_foundational_model/gkz/ckpts/hub/qwen25_72B"
+        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "Qwen/Qwen2.5-72B-Instruct"
     },
     "qwen25-32b-chat": {
-        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "/mnt/world_foundational_model/gkz/ckpts/hub/qwen25_32B"
+        "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "Qwen/Qwen2.5-32B-Instruct"
     },
-    # You can add other Qwen 2.5 model sizes here, for example:
-    # "qwen25-1.5b-chat": {
-    #     "llm_family": "qwen25", "llm_cls": Qwen2ForCausalLM, "hf_hub_path": "Qwen/Qwen2-1.5B-Instruct"
-    # },
 }
-# fmt: on
 
 
 class Qwen25LLMBackbone(HFCausalLLMBackbone):

@@ -5,30 +5,26 @@ VisionBackbone based on Stable Video Diffusion (SVD) for PrismaticVLM.
 This backbone uses the intermediate features from SVD's UNet as visual representations.
 """
 
-from dataclasses import dataclass # type: ignore
-from functools import partial # type: ignore
-from typing import Callable, Tuple, Union, Dict, Optional, List # type: ignore
-import re # type: ignore
+from dataclasses import dataclass
+from functools import partial
+from typing import Callable, Tuple, Union, Dict, Optional, List
+import re
 import os
 
 import torch
-import torch.nn as nn
 from torchvision import transforms
 import PIL
 from PIL.Image import Image
-from timm.models.vision_transformer import Block, VisionTransformer
-from torch.distributed.fsdp.wrap import _module_wrap_policy, _or_policy, transformer_auto_wrap_policy
-from torchvision.transforms import Compose, Resize, ToTensor, Normalize
+from torch.distributed.fsdp.wrap import _module_wrap_policy
+from torchvision.transforms import Compose, Resize, ToTensor
 
 from diffusers import StableVideoDiffusionPipeline
 from transformers import CLIPVisionModelWithProjection
 
-import timm
-from timm.models.vision_transformer import Block, VisionTransformer
-
 from prismatic.util.svd_utils import randn_tensor, retrieve_timesteps, _resize_with_antialiasing, _append_dims, customunet, SVDImageTransform, handle_memory_attention
-from prismatic.models.backbones.vision.base_vision import ImageTransform, LetterboxPad, VisionBackbone, unpack_tuple
+from prismatic.models.backbones.vision.base_vision import VisionBackbone
 from prismatic.overwatch import initialize_overwatch
+
 import logging
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from requests.exceptions import SSLError, ConnectionError
@@ -54,7 +50,7 @@ class SVDVisionBackbone(VisionBackbone):
         height: Optional[int] = 448,
         width: Optional[int] = 448,
         num_frames: Optional[int] = 8,
-        # SVD 相关路径
+        # paths related to SVD
         svd_model_path: str = "/mnt/world_foundational_model/kevin/vlm_models/svd/",
         clip_model_path: str = "/mnt/world_foundational_model/kevin/vlm_models/clip-vit-base-patch32",
         torch_dtype: torch.dtype = torch.bfloat16,
@@ -69,7 +65,7 @@ class SVDVisionBackbone(VisionBackbone):
         self.num_frames = num_frames if num_frames is not None else 8
         # overwatch.info(f"Initialized SVDVisionBackbone with height: {self.height}, width: {self.width}, num_frames: {self.num_frames}")
 
-        # 1. 加载SVD pipeline和相关模型
+        # 1. Load SVD pipeline and related models
         self.pipeline, self.vae, self.unet = self._load_svd_models()
         self.image_encoder = self._load_image_encoder()
         self.vae_scale_factor = self.pipeline.vae_scale_factor
@@ -80,10 +76,10 @@ class SVDVisionBackbone(VisionBackbone):
             unet=self.unet
         )
 
-        # 2. 设置 image transform
+        # 2. Set image transform
         self.image_transform =self. _create_image_transform() # svd_transform
 
-        # 3. 将模型移至适当的设备和数据类型
+        # 3. Move models to the appropriate device and dtype
         self.to(self.torch_dtype)
         if self.vae is not None:
             self.vae.config.force_upcast = False
@@ -92,20 +88,20 @@ class SVDVisionBackbone(VisionBackbone):
         stop=stop_after_attempt(5),
         wait=wait_exponential(multiplier=1, min=2, max=30),
         before_sleep=lambda retry_state: logger.warning(
-            f"加载模型失败，原因: {retry_state.outcome.exception()}. "
-            f"将在 {retry_state.next_action.sleep:.2f} 秒后进行第 {retry_state.attempt_number} 次重试..."
+            f"Loading model fail because of: {retry_state.outcome.exception()}. "
+            f"Will start in {retry_state.next_action.sleep:.2f} seconds for NO.{retry_state.attempt_number} retry..."
         )
     )
 
     def _load_svd_models(self):
-        """加载SVD pipeline, VAE, 和自定义的UNet。"""
+        """Load the SVD pipeline, VAE, and the custom UNet."""
         pipeline = StableVideoDiffusionPipeline.from_pretrained(
             self.svd_model_path,
             torch_dtype=self.torch_dtype,
             variant='fp16'
         )
 
-        # 使用你的 customunet
+        # Use your customunet
         config = pipeline.unet.config
         state_dict = pipeline.unet.state_dict()
         new_unet = customunet(config)
@@ -117,45 +113,42 @@ class SVDVisionBackbone(VisionBackbone):
         if pipeline.vae is not None:
             pipeline.vae.to(dtype=self.torch_dtype)
 
-        # print("!!! Applying the critical fix: Switching UNet to the default attention processor.")
-        # new_unet.set_default_attn_processor()
-
         return pipeline, pipeline.vae, pipeline.unet
 
     def _load_image_encoder(self):
-        """加载CLIP图像编码器。"""
+        """Load the CLIP vision encoder."""
         image_encoder = CLIPVisionModelWithProjection.from_pretrained(self.clip_model_path)
         image_encoder.to(dtype=self.torch_dtype)
         image_encoder.requires_grad_(False)
         return image_encoder
 
     def _create_image_transform(self) -> Callable:
-        """根据策略创建图像变换。"""
-        # SVD对输入尺寸有特定要求，这里我们使用简单的resize
-        # 你可以根据需要实现 'resize-crop' 和 'letterbox'
+        """Create image transforms according to the resize strategy."""
+        # SVD has specific input size requirements; using simple resize here
+        # You can implement 'resize-crop' and 'letterbox' as needed
         if self.image_resize_strategy == "resize-naive":
-            # 1. 首先定义针对单帧图像的变换
+            # 1. First define the transform for a single frame
             single_frame_transform = Compose([
                 Resize((self.height, self.width)),
                 ToTensor(),
             ])
 
-            # 2. 将单帧变换包装在我们的多帧处理器中
+            # 2. Wrap the single-frame transform in our multi-frame processor
             return SVDImageTransform(single_frame_transform)
         else:
-            # 为其他策略提供一个默认或抛出错误
+            # Provide a default or raise an error for other strategies
             raise ValueError(f"Image Resize Strategy `{self.image_resize_strategy}` is not supported for SVD!")
 
     @torch.no_grad()
     def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
         """
-        通过ddim_one_step运行图像，提取并投影特征。
+        Run a single ddim step to extract and project features.
         Args:
-            pixel_values (torch.Tensor): 经过预处理的图像张量，形状为 [B, N, C, H, W]。
+            pixel_values (torch.Tensor): Preprocessed image tensor with shape [B, N, C, H, W].
         Returns:
-            torch.Tensor: 提取的视觉特征，形状为 [B, NumPatches, EmbedDim]。
+            torch.Tensor: Extracted visual features with shape [B, NumPatches, EmbedDim].
         """
-        # 将模型移动到与输入相同的设备
+        # Move the pipeline and encoder to the same device as the input
         self.pipeline.to(pixel_values.device)
         self.image_encoder.to(pixel_values.device)
 
@@ -163,7 +156,7 @@ class SVDVisionBackbone(VisionBackbone):
         conditioning_image = pixel_values[:, 0]
         if is_multiframe:
             latents = self.ddim_one_step(
-                image=conditioning_image,  # 使用第一帧进行条件编码
+                image=conditioning_image,  # use first frame for conditioning
                 pipeline=self.pipeline,
                 vae=self.vae,
                 unet=self.unet,
@@ -176,7 +169,7 @@ class SVDVisionBackbone(VisionBackbone):
             )
         else:
             latents = self.ddim_one_step(
-                image=conditioning_image,  # 使用第一帧进行条件编码
+                image=conditioning_image,  # use first frame for conditioning
                 pipeline=self.pipeline,
                 vae=self.vae,
                 unet=self.unet,
@@ -188,17 +181,16 @@ class SVDVisionBackbone(VisionBackbone):
             )
         # B=batch_size, T=num_frames, C=channels, H_feat,W_feat=feature map size
 
-        # 展平并投影特征
-        # rearrange(latents, 'b t c h w -> b (t h w) c')  <- 注意维度顺序
+        # Flatten and project features
+        # rearrange(latents, 'b t c h w -> b (t h w) c')  <- note the dimension order
         latents_flat = latents.permute(0, 1, 3, 4, 2).reshape(latents.size(0), -1, latents.size(2))
 
         return latents_flat
 
     @torch.no_grad()
     def preview(self, im_1_batched, output_dir="./wm_output"):
-        """ Function to preview the diffusion process by generating a GIF from the frames."""
+        """Generate a preview GIF from the frames to visualize the diffusion process."""
         is_multiframe = im_1_batched.shape[1] > 1
-        # print(f"is_multiframe: {is_multiframe}")
         conditioning_image = im_1_batched[:, 0]
         if is_multiframe:
             frames = self.ddim_one_step(conditioning_image, self.pipeline, self.vae, self.unet, self.image_encoder, height=self.height,width=self.width, output_type="pil", all_frames_pixels=im_1_batched, num_frames=8)  # returning frames
@@ -249,13 +241,6 @@ class SVDVisionBackbone(VisionBackbone):
                 full_frame_path = os.path.join(output_dir, f"full_frame_{idx:03d}.png")
                 frame.save(frame_path)
                 all_frames_full[idx].save(full_frame_path)
-                # print(f"Saved frame {idx} to {frame_path}")
-
-        # first_frame_path = os.path.join(output_dir, "first_frame.png")
-        # if all_frames:
-        #     first_frame = all_frames[0]
-        #     first_frame.save(first_frame_path)
-        #     print(f"First frame saved to {first_frame_path}")
 
         print(f"GIF saved to {gif_path}")
 
@@ -282,7 +267,7 @@ class SVDVisionBackbone(VisionBackbone):
         all_frames_pixels: Optional[torch.Tensor] = None,
     ):
         """
-        model forward一次 ，取出一次forward的feature
+        Single model forward pass to extract features from one forward call.
         noise_shape = [args.bs, channels, n_frames, h, w]
         image [b,c,h,w]
         video [b,c,t,h,w]
@@ -312,21 +297,15 @@ class SVDVisionBackbone(VisionBackbone):
             batch_size = image.shape[0]
 
         pipeline._guidance_scale = max_guidance_scale
-
-        # clip_image = _resize_with_antialiasing(image, (224, 224))
-
-
         do_classifier_free_guidance = True
-        # 3. Encode input image
-        # if isinstance(image, torch.Tensor) and image.shape != (224, 224):
-        #     image = _resize_with_antialiasing(image, (224, 224))
 
+        # 3. Encode input image
         def tensor_to_PIL(image):
-            """将 PyTorch 张量 (Batch) 转换为 PIL 图像列表"""
+            """Convert a PyTorch tensor batch to a list of PIL images."""
             from PIL import Image
             import numpy as np
             if not isinstance(image, torch.Tensor) or image.dim() != 4:
-                raise TypeError("输入必须是一个4维的PyTorch张量 (B, C, H, W)")
+                raise TypeError("Input must be a 4D PyTorch tensor (B, C, H, W)")
             image = image.clamp(0, 1) * 255
             numpy_array = image.permute(0, 2, 3, 1).cpu().byte().numpy()
             pil_images = [Image.fromarray(img) for img in numpy_array]
@@ -335,7 +314,7 @@ class SVDVisionBackbone(VisionBackbone):
         image = tensor_to_PIL(image) if isinstance(image, torch.Tensor) else image
 
         def numpy_batch_to_pt(numpy_batch):
-            """将 numpy 批处理数组 (B, H, W, C) 转换为 PyTorch 张量 (B, C, H, W)"""
+            """Convert a numpy batch array (B, H, W, C) to a PyTorch tensor (B, C, H, W)."""
             return torch.tensor(numpy_batch, dtype=torch.float32).permute(0, 3, 1, 2) / 255.0
 
         if isinstance(image[0], PIL.Image.Image):
@@ -371,19 +350,12 @@ class SVDVisionBackbone(VisionBackbone):
         #     vae.to(dtype=torch.float32)
 
         pipeline.vae.to(dtype=dtype, device=device)
-        # print("shape of the image to vae:", image.shape)
         image_latents = pipeline._encode_vae_image(
             image,
             device=device,
             num_videos_per_prompt=num_videos_per_prompt,
             do_classifier_free_guidance=do_classifier_free_guidance,
         )
-        # print("shape of the image latents:", image_latents.shape)
-        # image_latents = image_latents.to(image_embeddings.dtype)
-
-        # cast back to fp16 if needed
-        # if needs_upcasting:
-        #     pipeline.vae.to(dtype=torch.float16)
 
         # Repeat the image latents for each frame so we can concatenate them with the noise
         # image_latents [batch, channels, height, width] ->[batch, num_frames, channels, height, width]
@@ -427,6 +399,7 @@ class SVDVisionBackbone(VisionBackbone):
         # 6. Prepare timesteps
         timesteps, num_inference_steps = retrieve_timesteps(pipeline.scheduler, num_inference_steps, device, None, sigmas)
         timesteps.to(device, dtype=dtype)
+
         # 7. Prepare latent variables
         num_channels_latents = pipeline.unet.config.in_channels
         latents = pipeline.prepare_latents(
@@ -440,7 +413,6 @@ class SVDVisionBackbone(VisionBackbone):
             generator,
             latents,
         )
-        # print(latents.shape, image_latents.shape)
 
         # 8. Prepare guidance scale
         guidance_scale = torch.linspace(min_guidance_scale, max_guidance_scale, num_frames).unsqueeze(0)
@@ -449,29 +421,17 @@ class SVDVisionBackbone(VisionBackbone):
         guidance_scale = _append_dims(guidance_scale, latents.ndim)
 
         pipeline._guidance_scale = guidance_scale
-        # img_cognition_features = self.image_compressor(img_emb)
-
-        # x_start = z.detach().clone()
-        # noise = torch.randn_like(x_start)
-        # fix_video_timesteps=True
-        # if fix_video_timesteps==True:
-        #     t_vid = torch.randint(pipeline.fake_ddpm_step, pipeline.fake_ddpm_step+1,(x_start.shape[0],), device=device).long()
 
         # 9. Denoising loop
         #num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         pipeline._num_timesteps = len(timesteps)
 
-        #print(f"Running {num_inference_steps} inference steps with {len(timesteps)} timesteps")
         for i, t in enumerate(timesteps[:]):
-            #print(f"Running inference step {i + 1}/{num_inference_steps} at timestep {t.item()}")
-
             latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents # [bsz*2,frame,4,32,32] Doubling bsz for guidance
             latent_model_input = pipeline.scheduler.scale_model_input(latent_model_input, t)
 
             latent_model_input = torch.cat([latent_model_input, image_latents], dim=2)
             latent_model_input.to(dtype=latents.dtype)
-            # print(latent_model_input.shape, image_latents.shape) # (bsz*2,frame,4,32,32) (bsz*2,frame,4,32,32)
-
             # predict the noise residual
             # latent_model_input = latent_model_input.to(pipeline.unet.dtype)
             # image_embeddings = image_embeddings.to(pipeline.unet.dtype)
@@ -483,7 +443,6 @@ class SVDVisionBackbone(VisionBackbone):
 
             t.to(dtype=latent_model_input.dtype, device=latent_model_input.device)
 
-            # print(f"latent_model_input shape {latent_model_input.shape}, image_embeddings shape: {image_embeddings.shape}")
             full_noise_pred, down_noise_pred = self.unet( #use custom unet forward
                 latent_model_input,
                 t,
@@ -491,9 +450,7 @@ class SVDVisionBackbone(VisionBackbone):
                 added_time_ids=added_time_ids,
                 return_dict=False,
                 return_down_features=return_down_features,  # We want the down features
-            ) # Get the down features
-            # if return_down_features:
-            #     print(f"down noise predict in timestep {i}", down_noise_pred.shape)
+            )
 
             noise_pred = full_noise_pred
 
@@ -519,7 +476,7 @@ class SVDVisionBackbone(VisionBackbone):
 
         if output_type == "unet_latent":
             noise_pred_uncond, noise_pred_cond = down_noise_pred.chunk(2) # [2 * b, t, c, h, w] [2, 8, 1280, 9, 16], h w are feature map of middle unet layer
-            # print(f"noise_pred_cond shape: {noise_pred_cond.shape}") #noise_pred_cond shape: torch.Size([1, 8, 1280, 7, 7])
+            # noise_pred_cond shape: torch.Size([1, 8, 1280, 7, 7])
             # prepare latents based on latent unet middle layer shape
 
             latents_middle = pipeline.prepare_latents(
@@ -553,18 +510,17 @@ class SVDVisionBackbone(VisionBackbone):
 
 
     def get_fsdp_wrapping_policy(self) -> Callable:
-        """为SVD UNet定义FSDP封装策略。"""
+        """Define the FSDP wrapping policy for the SVD UNet."""
         return partial(_module_wrap_policy, module_classes={SVDVisionBackbone})
 
     @property
     def embed_dim(self) -> int:
-        # 这是投影MLP之后的输出维度
-        # 来自于你的 `init_projection`: 'hidden_size': 4096
+        # This is the output dimension before the projection MLP
         return 1280
 
     @property
     def num_patches(self) -> int:
-        num_frames = 8
+        num_frames = self.num_frames if self.num_frames is not None else 8
         h_feat = self.height // self.vae_scale_factor
         w_feat = self.width // self.vae_scale_factor
         overwatch.info(f"num_patches: {num_frames * h_feat * w_feat}")

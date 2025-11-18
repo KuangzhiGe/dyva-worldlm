@@ -9,9 +9,9 @@ variant thereof. A given model variant configures the following attributes:
     - Stage 2 (`finetune`) Optimization Hyperparameters
 """
 
-from dataclasses import dataclass # type: ignore
-from enum import Enum, unique  # type: ignore
-from typing import Optional  # type: ignore
+from dataclasses import dataclass
+from enum import Enum, unique
+from typing import Optional
 
 from draccus import ChoiceRegistry
 
@@ -489,111 +489,48 @@ class Prism_7B_DINOSigLIP_224px(Exp_7B_One_Stage):
     finetune_epochs: int = 2
 
 @dataclass
-class Prism_7B_svd(Exp_7B_One_Stage):
-    model_id: str = "prism-svd"
-    vision_backbone_id: str = "clip-svd"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+fused-gelu-mlp"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_unet(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_unet"
-    vision_backbone_id: str = "clip-svd_unet"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "align+fused-gelu-mlp"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dual_siglip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dual_siglip"
-    vision_backbone_id: str = "clip-svd_dual_siglip"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+dual"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dual_dino(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dual_dino"
-    vision_backbone_id: str = "clip-svd_dual_dino"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+dual"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dual_clip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dual_clip"
-    vision_backbone_id: str = "clip-svd_dual_clip"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+dual"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dual_dino_siglip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dual_dino_siglip"
-    vision_backbone_id: str = "clip-svd_dual_dino_siglip"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+dual"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_clip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_clip"
-    vision_backbone_id: str = "clip-svd_clip"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+fused-gelu-mlp"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_vae(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_vae"
-    vision_backbone_id: str = "clip-svd_vae"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+svd"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_siglip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_siglip"
-    vision_backbone_id: str = "clip-svd_siglip"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+fused-gelu-mlp"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dino(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dino"
-    vision_backbone_id: str = "clip-svd_dino"
-    image_resize_strategy: str = "resize-naive"
-    llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+fused-gelu-mlp"
-    finetune_epochs: int = 1
-    
-@dataclass
-class Prism_7B_svd_dino_siglip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dino_siglip"
-    vision_backbone_id: str = "clip-svd_dino_siglip"
+class DyVA_7B_svd(Exp_7B_One_Stage):
+    model_id: str = "dyva-svd"
+    vision_backbone_id: str = "dyva-svd"
     image_resize_strategy: str = "resize-naive"
     llm_backbone_id: str = "llama2-7b-pure"
     arch_specifier: str = "no-align+fused-gelu-mlp"
     finetune_epochs: int = 1
 
 @dataclass
-class Prism_7B_svd_dino_clip(Exp_7B_One_Stage):
-    model_id: str = "prism-svd_dino_clip"
-    vision_backbone_id: str = "clip-svd_dino_clip"
+class DyVA_7B_siglip(Exp_7B_One_Stage):
+    model_id: str = "dyva_siglip+7b"
+    vision_backbone_id: str = "dyva_siglip"
     image_resize_strategy: str = "resize-naive"
     llm_backbone_id: str = "llama2-7b-pure"
-    arch_specifier: str = "no-align+fused-gelu-mlp"
+    arch_specifier: str = "no-align+dual"
+    finetune_epochs: int = 1
+
+@dataclass
+class DyVA_7B_siglip_qwen(Exp_7B_One_Stage):
+    model_id: str = "dyva_siglip_qwen+7b"
+    vision_backbone_id: str = "dyva_siglip"
+    image_resize_strategy: str = "resize-naive"
+    llm_backbone_id: str = "qwen25-7b-chat"
+    arch_specifier: str = "no-align+dual"
+    finetune_epochs: int = 1
+
+@dataclass
+class DyVA_7B_dino(Exp_7B_One_Stage):
+    model_id: str = "dyva_dino+7b"
+    vision_backbone_id: str = "dyva_dino"
+    image_resize_strategy: str = "resize-naive"
+    llm_backbone_id: str = "llama2-7b-pure"
+    arch_specifier: str = "no-align+dual"
+    finetune_epochs: int = 1
+
+@dataclass
+class DyVA_7B_clip(Exp_7B_One_Stage):
+    model_id: str = "dyva-clip+7b"
+    vision_backbone_id: str = "dyva_clip"
+    image_resize_strategy: str = "resize-naive"
+    llm_backbone_id: str = "llama2-7b-pure"
+    arch_specifier: str = "no-align+dual"
     finetune_epochs: int = 1
 
 # === Define a Model Registry Enum for Reference & Validation ===
@@ -672,19 +609,12 @@ class ModelRegistry(Enum):
     # === Inference Optimized :: 224px Prism Models ===
     PRISM_DINOSIGLIP_224PX_CONTROLLED_7B = Prism_7B_DINOSigLIP_224px_Controlled
     PRISM_DINOSIGLIP_224PX_7B = Prism_7B_DINOSigLIP_224px
-    
-    PRISM_SVD_7B = Prism_7B_svd
-    PRISM_SVD_UNET_7B = Prism_7B_svd_unet
-    PRISM_SVD_DUAL_SIGLIP_7B = Prism_7B_svd_dual_siglip
-    PRISM_SVD_DUAL_DINO_SIGLIP_7B = Prism_7B_svd_dual_dino_siglip
-    PRISM_SVD_DUAL_DINO_7B = Prism_7B_svd_dual_dino
-    PRISM_SVD_DUAL_CLIP_7B = Prism_7B_svd_dual_clip
-    PRISM_SVD_VAE_7B = Prism_7B_svd_vae
-    PRISM_SVD_CLIP_7B = Prism_7B_svd_clip
-    PRISM_SVD_SIGLIP_7B = Prism_7B_svd_siglip
-    PRISM_SVD_DINO_7B = Prism_7B_svd_dino
-    PRISM_SVD_DINO_SIGLIP_7B = Prism_7B_svd_dino_siglip
-    PRISM_SVD_DINO_CLIP_7B = Prism_7B_svd_dino_clip
+
+    DYVA_SVD_7B = DyVA_7B_svd
+    DYVA_SIGLIP_7B = DyVA_7B_siglip
+    DYVA_SIGLIP_QWEN_7B = DyVA_7B_siglip_qwen
+    DYVA_DINO_7B = DyVA_7B_dino
+    DYVA_CLIP_7B = DyVA_7B_clip
 
     @property
     def model_id(self) -> str:

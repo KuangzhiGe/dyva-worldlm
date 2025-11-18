@@ -24,7 +24,7 @@ from prismatic.models.backbones.llm.prompting import (
 LLAMA2_MODELS = {
     # === Pure Meta LLaMa-2 (non-instruct/chat-tuned) Models ===
     "llama2-7b-pure": {
-        "llm_family": "llama2", "llm_cls": LlamaForCausalLM, "hf_hub_path": "/mnt/world_foundational_model/gkz/ckpts/hub/models--meta-llama--Llama-2-7b-hf/snapshots/01c7f73d771dfac7d292323805ebc428287df4f9", # "meta-llama/Llama-2-7b-hf"
+        "llm_family": "llama2", "llm_cls": LlamaForCausalLM, "hf_hub_path": "meta-llama/Llama-2-7b-hf"
     },
 
     "llama2-13b-pure": {

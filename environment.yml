@@ -1,4 +1,4 @@
-name: /mnt/world_foundational_model/gkz/conda/svd
+name: dyva-worldlm
 channels:
   - conda-forge
   - bioconda
@@ -186,4 +186,3 @@ dependencies:
       - xxhash==3.5.0
       - yarl==1.20.1
       - zipp==3.23.0
-prefix: /mnt/world_foundational_model/gkz/conda/svd

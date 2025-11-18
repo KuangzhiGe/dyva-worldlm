@@ -11,9 +11,9 @@ Notes:
 
 from __future__ import annotations
 
-from functools import partial # type: ignore
+from functools import partial
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Type, Union, Tuple # type: ignore
+from typing import Callable, Dict, List, Optional, Type, Union, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -105,137 +105,20 @@ class PrismaticVLM(VLM):
         arch_specifier: str = "gelu-mlp",
     ) -> PrismaticVLM:
         """Initialize a PrismaticVLM from a pretrained checkpoint, freezing all weights, tailored for inference."""
-        # print(model_id)
-        if "prism-svd" in model_id:
-            overwatch.info(f"Loading Model_ID: {model_id}")
-            # model_id = "prism-dinosiglip+7b"
-            vlm = cls(
-                model_id,
-                vision_backbone,
-                llm_backbone,
-                enable_mixed_precision_training=enable_mixed_precision_training,
-                arch_specifier=arch_specifier,
-            )
-            # Load from Checkpoint (Custom --> should load both *projector* and *llm* weights)
-
-            # Loading Finetuned Model(LLM + Projector + UNet)
-            overwatch.info(f"Loading Projector and LLM from: {pretrained_checkpoint}")
-            # print(f"Loading Projector and LLM from: {pretrained_checkpoint}")
-            if "align" in str(pretrained_checkpoint) and "noalign" not in str(pretrained_checkpoint):
-                llm_ckpt = Path("/mnt/world_foundational_model/gkz/ckpts/hub/models--TRI-ML--prismatic-vlms/snapshots/a3ba8a19c453a82eaf5a3fb1e699dd9e441f0a12/prism-dinosiglip+7b/checkpoints/latest-checkpoint.pt")
-                model_state_dict_llm = torch.load(llm_ckpt, map_location="cpu", weights_only=True)["model"]
-                vlm.llm_backbone.load_state_dict(model_state_dict_llm["llm_backbone"])
-
-                # pretrained_checkpoint = Path("/mnt/world_foundational_model/gkz/prismatic-vlms/runs/svd_full_align/checkpoints/latest-checkpoint.pt")
-                model_state_dict_proj = torch.load(pretrained_checkpoint, map_location="cpu", weights_only=True)["model"]
-                vlm.projector.load_state_dict(model_state_dict_proj["projector"])
-
-                if "vision_backbone" in model_state_dict_proj:
-                    overwatch.info(f"Loading Vision Backbone from: {vision_ckpt}")
-                    vision_backbone_state = model_state_dict_proj["vision_backbone"]
-
-                    if "unet" in str(pretrained_checkpoint):
-                        unet_state_dict = {
-                            k.replace("unet.", "", 1): v
-                            for k, v in vision_backbone_state.items() if k.startswith("unet.")
-                        }
-                        vlm.vision_backbone.unet.load_state_dict(unet_state_dict)
-                    if "vae" in str(pretrained_checkpoint):
-                        vae_state_dict = {
-                            k.replace("vae.", "", 1): v
-                            for k, v in vision_backbone_state.items() if k.startswith("vae.")
-                        }
-                        vlm.vision_backbone.vae.load_state_dict(vae_state_dict)
-            else:
-                # print(f"Loading Projector and LLM from {str(pretrained_checkpoint)}") # xxx_ft_proj(_noalign) / xxx_ft_unet+proj(_noalign)
-                model_state_dict = torch.load(pretrained_checkpoint, map_location="cpu", weights_only=True)["model"]
-                assert (
-                    "projector" in model_state_dict and "llm_backbone" in model_state_dict
-                ), "PrismaticVLM `from_pretrained` expects checkpoint with keys for `projector` AND `llm_backbone`!"
-                vlm.projector.load_state_dict(model_state_dict["projector"])
-                vlm.llm_backbone.load_state_dict(model_state_dict["llm_backbone"])
-
-                ckpt_path = str(pretrained_checkpoint)
-                if "unet+" in ckpt_path or "vae+" in ckpt_path: # 在训练阶段有vision backbone进行训练
-                    if "noalign" not in ckpt_path and "fulldata" not in ckpt_path:
-                        vision_ckpt = Path(str(pretrained_checkpoint).replace('ft', 'align').replace("_multi_image", ""))
-                        # vision_ckpt = Path(str(pretrained_checkpoint).replace('ft', 'align'))
-                        model_state_dict = torch.load(vision_ckpt, map_location="cpu", weights_only=True)["model"]
-                        overwatch.info(f"Loading Vision Backbone from: {vision_ckpt}")
-                        vision_backbone_state = model_state_dict["vision_backbone"]
-                        if "align_dual" in str(vision_ckpt):
-                            if "unet" in str(vision_ckpt):
-                                unet_state_dict = {
-                                    k.replace("featurizers.svd.featurizer.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("featurizers.svd.featurizer.")
-                                }
-                                vlm.vision_backbone.featurizers["svd"].unet.load_state_dict(unet_state_dict)
-                            if "vae" in str(vision_ckpt):
-                                vae_state_dict = {
-                                    k.replace("featurizers.svd.featurizer.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("featurizers.svd.featurizer.")
-                                }
-                                vlm.vision_backbone.featurizers["svd"].vae.load_state_dict(vae_state_dict)
-                        else:
-                            if "unet" in str(vision_ckpt):
-                                unet_state_dict = {
-                                    k.replace("unet.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("unet.")
-                                }
-                                vlm.vision_backbone.unet.load_state_dict(unet_state_dict)
-                            if "vae" in str(vision_ckpt):
-                                vae_state_dict = {
-                                    k.replace("vae.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("vae.")
-                                }
-                                vlm.vision_backbone.vae.load_state_dict(vae_state_dict)
-                    else:
-                        overwatch.info(f"Loading Vision Backbone from: {ckpt_path}")
-                        # print(f"Loading Vision Backbone from: {ckpt_path}")
-                        vision_backbone_state = model_state_dict["vision_backbone"]
-                        if "ft_dual" in ckpt_path:
-                            vision_backbone_state = model_state_dict["vision_backbone"]
-                            if "unet" in str(ckpt_path):
-                                unet_state_dict = {
-                                    k.replace("featurizers.svd.unet.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("featurizers.svd.unet.")
-                                }
-                                vlm.vision_backbone.featurizers["svd"].unet.load_state_dict(unet_state_dict)
-                            if "vae" in str(ckpt_path):
-                                vae_state_dict = {
-                                    k.replace("featurizers.svd.vae.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("featurizers.svd.vae.")
-                                }
-                                vlm.vision_backbone.featurizers["svd"].vae.load_state_dict(vae_state_dict)
-                        else:
-                            if "unet" in str(ckpt_path):
-                                unet_state_dict = {
-                                    k.replace("unet.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("unet.")
-                                }
-                                vlm.vision_backbone.unet.load_state_dict(unet_state_dict)
-                            if "vae" in str(ckpt_path):
-                                vae_state_dict = {
-                                    k.replace("vae.", "", 1): v
-                                    for k, v in vision_backbone_state.items() if k.startswith("vae.")
-                                }
-                                vlm.vision_backbone.vae.load_state_dict(vae_state_dict)
-
-        else:
-            overwatch.info(f"Loading Model_ID: {model_id}")
-            vlm = cls(
-                model_id,
-                vision_backbone,
-                llm_backbone,
-                enable_mixed_precision_training=enable_mixed_precision_training,
-                arch_specifier=arch_specifier,
-            )
-            model_state_dict = torch.load(pretrained_checkpoint, map_location="cpu")["model"]
-            assert (
-                "projector" in model_state_dict and "llm_backbone" in model_state_dict
-            ), "PrismaticVLM `from_pretrained` expects checkpoint with keys for `projector` AND `llm_backbone`!"
-            vlm.projector.load_state_dict(model_state_dict["projector"])
-            vlm.llm_backbone.load_state_dict(model_state_dict["llm_backbone"])
+        overwatch.info(f"Loading Model_ID: {model_id}")
+        vlm = cls(
+            model_id,
+            vision_backbone,
+            llm_backbone,
+            enable_mixed_precision_training=enable_mixed_precision_training,
+            arch_specifier=arch_specifier,
+        )
+        model_state_dict = torch.load(pretrained_checkpoint, map_location="cpu")["model"]
+        assert (
+            "projector" in model_state_dict and "llm_backbone" in model_state_dict
+        ), "PrismaticVLM `from_pretrained` expects checkpoint with keys for `projector` AND `llm_backbone`!"
+        vlm.projector.load_state_dict(model_state_dict["projector"])
+        vlm.llm_backbone.load_state_dict(model_state_dict["llm_backbone"])
 
         # Freeze Weights
         vlm.requires_grad_(False)
@@ -273,96 +156,7 @@ class PrismaticVLM(VLM):
             overwatch.info(f"[Frozen]    🥶 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
             overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
 
-        elif stage == "align-dual":
-            self.vision_backbone.requires_grad_(False)
-            self.vision_backbone.featurizers["svd"].unet.requires_grad_(True)
-            self.llm_backbone.requires_grad_(False)
-            self.projector.requires_grad_(True)
-
-            # Add to `self.trainable_module_keys`
-            self.trainable_module_keys = ["projector", "vision_backbone"]
-
-            # Update Trackers
-            self.vision_backbone_requires_grad = True
-
-            # Explicitly Log Frozen / Trainable Components
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
-            overwatch.info(f"[Frozen]    🥶 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
-
-        elif stage == "align-svd":
-            self.vision_backbone.requires_grad_(False)
-            self.vision_backbone.unet.requires_grad_(True)
-            self.llm_backbone.requires_grad_(False)
-            self.projector.requires_grad_(True)
-
-            # Add to `self.trainable_module_keys`
-            self.trainable_module_keys = ["projector", "vision_backbone"]
-
-            # Update Trackers
-            self.vision_backbone_requires_grad = True
-
-            # Explicitly Log Frozen / Trainable Components
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
-            overwatch.info(f"[Frozen]    🥶 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
-
-        elif stage == "align-vae":
-            self.vision_backbone.requires_grad_(False)
-            self.vision_backbone.unet.requires_grad_(True)
-            self.vision_backbone.vae.requires_grad_(True)
-            self.llm_backbone.requires_grad_(False)
-            self.projector.requires_grad_(True)
-
-            # Add to `self.trainable_module_keys`
-            self.trainable_module_keys = ["projector", "vision_backbone"]
-
-            # Update Trackers
-            self.vision_backbone_requires_grad = True
-
-            # Explicitly Log Frozen / Trainable Components
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
-            overwatch.info(f"[Frozen]    🥶 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
-
-        elif stage == "finetune-dual":
-            self.vision_backbone.requires_grad_(False)
-            self.vision_backbone.featurizers["svd"].unet.requires_grad_(True)
-            self.llm_backbone.requires_grad_(True)
-            self.projector.requires_grad_(True)
-
-            # Add to `self.trainable_module_keys`
-            self.trainable_module_keys = ["projector", "llm_backbone", "vision_backbone"]
-
-            # Update Trackers
-            self.vision_backbone_requires_grad = False
-
-            # Explicitly Log Frozen / Unfrozen Components
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
-
-        elif stage == "finetune-svd":
-            self.vision_backbone.requires_grad_(False)
-            self.vision_backbone.unet.requires_grad_(True)
-            self.llm_backbone.requires_grad_(True)
-            self.projector.requires_grad_(True)
-
-            # Add to `self.trainable_module_keys`
-            # self.trainable_module_keys = ["projector", "llm_backbone"]
-            self.trainable_module_keys = ["projector", "llm_backbone", "vision_backbone"]
-
-            # Update Trackers
-            self.vision_backbone_requires_grad = False
-
-            # Explicitly Log Frozen / Unfrozen Components
-            # overwatch.info(f"[Frozen]    🥶 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Vision Backbone `{self.vision_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> LLM Backbone `{self.llm_backbone.identifier}`", ctx_level=1)
-            overwatch.info(f"[TRAINABLE] 🔥 =>> Projector `{self.arch_specifier}`", ctx_level=1)
-
-        elif stage == "finetune" or stage == "finetune-vae":
-        # elif stage == "finetune" or stage == "finetune-svd" or stage == "finetune-vae":
+        elif stage == "finetune":
             self.vision_backbone.requires_grad_(False)
             self.llm_backbone.requires_grad_(True)
             self.projector.requires_grad_(True)
@@ -400,7 +194,7 @@ class PrismaticVLM(VLM):
 
     def load_from_checkpoint(self, stage: str, run_dir: Path, pretrained_checkpoint: Optional[Path] = None) -> None:
         """Load weights from checkpoint (if required by the given stage)."""
-        assert stage in {"align", "finetune", "full-finetune", "align-svd", "finetune-svd", "align-vae", "finetune-vae", "align-dual", "finetune-dual"}, f"Stage {stage} is not supported!"
+        assert stage in {"align", "finetune", "full-finetune"}, f"Stage {stage} is not supported!"
 
         # If we're running a `no-align` architecture, we're good!
         if self.arch_specifier.startswith("no-align"):
@@ -410,7 +204,7 @@ class PrismaticVLM(VLM):
             return
 
         # Otherwise, handle stage-specific logic!
-        if stage == "align" or stage == "align-svd" or stage == "align-vae" or stage == "align-dual":
+        if stage == "align":
             overwatch.info("Stage `align` does not require pretrained weights =>> Starting Training", ctx_level=1)
             return
 
@@ -423,57 +217,12 @@ class PrismaticVLM(VLM):
             model_state_dict = torch.load(pretrained_checkpoint)["model"]
             self.projector.load_state_dict(model_state_dict["projector"])
 
-            # projector_state_dict = model_state_dict["projector"]
-            # from collections import OrderedDict
-            # new_state_dict = OrderedDict()
-            # for key, value in projector_state_dict.items():
-            #     if key.startswith('_orig_mod.'):
-            #         new_key = key.replace('_orig_mod.', '', 1)
-            #         new_state_dict[new_key] = value
-            #     else:
-            #         new_state_dict[key] = value
-            # self.projector.load_state_dict(new_state_dict)
-
             if "llm_backbone" in model_state_dict:
                 self.llm_backbone.load_state_dict(model_state_dict["llm_backbone"])
-
-            if stage == "finetune-svd":
-                overwatch.info(f"Loading Unet from aligned checkpoint", ctx_level=1)
-                if "vision_backbone" in model_state_dict:
-                    vision_backbone_state = model_state_dict["vision_backbone"]
-                else:
-                    pretrained_ckpt = Path("/mnt/world_foundational_model/gkz/prismatic-vlms/runs/svd_only/prism-svd_align_unet+proj/checkpoints/latest-checkpoint.pt") # str(pretrained_checkpoint).replace("ft", "align")
-                    model_state_dict = torch.load(pretrained_ckpt)["model"]
-                    vision_backbone_state = model_state_dict["vision_backbone"]
-                unet_state_dict = {
-                    k.replace("unet.", "", 1): v
-                    for k, v in vision_backbone_state.items() if k.startswith("unet.")
-                }
-                self.vision_backbone.unet.load_state_dict(unet_state_dict)
-
-            if stage == "finetune-dual":
-                overwatch.info(f"Loading Unet from aligned checkpoint", ctx_level=1)
-                vision_backbone_state = model_state_dict["vision_backbone"]
-                unet_state_dict = {
-                    k.replace("featurizers.svd.featurizer.", "", 1): v
-                    for k, v in vision_backbone_state.items() if k.startswith("featurizers.svd.featurizer.")
-                }
-                self.vision_backbone.featurizers["svd"].unet.load_state_dict(unet_state_dict)
-
-            if stage == "finetune-vae":
-                overwatch.info(f"Loading Unet from aligned checkpoint", ctx_level=1)
-                vision_backbone_state = model_state_dict["vision_backbone"]
-                unet_state_dict = {
-                    k.replace("unet.", "", 1): v
-                    for k, v in vision_backbone_state.items() if k.startswith("unet.")
-                }
-                self.vision_backbone.unet.load_state_dict(unet_state_dict)
-
-                vae_state_dict = {
-                    k.replace("vae.", "", 1): v
-                    for k, v in vision_backbone_state.items() if k.startswith("vae.")
-                }
-                self.vision_backbone.vae.load_state_dict(vae_state_dict)
+            else:
+                assert "llm_backbone" not in self.trainable_module_keys, (
+                    "Pretrained Checkpoint does not contain `llm_backbone` weights; cannot finetune LLM!"
+                )
             return
 
         # [Contract] If no `pretrained_checkpoint`, assume `align` lives in the run directory; string substitution!

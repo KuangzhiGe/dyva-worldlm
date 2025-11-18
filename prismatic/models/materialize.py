@@ -16,11 +16,7 @@ overwatch = initialize_overwatch(__name__)
 from prismatic.models.backbones.vision import (
     CLIPViTBackbone,
     SVDVisionBackbone,
-    SVDSigLIPVisionBackbone,
-    SVDUnetVisionBackbone,
-    DualSVDSigLIPDINOVisionBackbone,
-    CompositeVisionBackbone,
-    VAEVisionBackbone,
+    DyVAVisionBackbone,
     DinoCLIPViTBackbone,
     DinoSigLIPViTBackbone,
     DinoV2ViTBackbone,
@@ -29,7 +25,7 @@ from prismatic.models.backbones.vision import (
     SigLIPViTBackbone,
     VisionBackbone,
 )
-from prismatic.models.vlms import PrismaticVLM, WM_VLM
+from prismatic.models.vlms import PrismaticVLM
 
 # === Registries =>> Maps ID --> {cls(), kwargs} :: Different Registries for Vision Backbones, LLM Backbones, VLMs ===
 # fmt: off
@@ -45,17 +41,6 @@ VISION_BACKBONES = {
 
     # === Assorted CLIP Backbones ===
     "clip-vit-b": {"cls": CLIPViTBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd": {"cls": SVDVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_vae": {"cls": VAEVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_unet": {"cls": SVDUnetVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_clip": {"cls": CompositeVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dual_siglip": {"cls": SVDSigLIPVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dual_dino": {"cls": SVDSigLIPVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dual_dino_siglip": {"cls": DualSVDSigLIPDINOVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dual_clip": {"cls": SVDSigLIPVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_siglip": {"cls": CompositeVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dino": {"cls": CompositeVisionBackbone, "kwargs": {"default_image_size": 224}},
-    "clip-svd_dino_siglip": {"cls": CompositeVisionBackbone, "kwargs": {"default_image_size": 224}},
     "clip-vit-l-336px": {"cls": CLIPViTBackbone, "kwargs": {"default_image_size": 336}},
 
     # === Assorted SigLIP Backbones ===
@@ -67,6 +52,12 @@ VISION_BACKBONES = {
     # === Fused Backbones ===
     "dinoclip-vit-l-336px": {"cls": DinoCLIPViTBackbone, "kwargs": {"default_image_size": 336}},
     "dinosiglip-vit-so-384px": {"cls": DinoSigLIPViTBackbone, "kwargs": {"default_image_size": 384}},
+
+    # === DyVA-SVD Backbones ===
+    "dyva-svd": {"cls": SVDVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_siglip": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_dino": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_clip": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
 }
 
 
@@ -97,7 +88,6 @@ LLM_BACKBONES = {
     "qwen25-7b-chat": {"cls": Qwen25LLMBackbone, "kwargs": {}},
     "qwen25-72b-chat": {"cls": Qwen25LLMBackbone, "kwargs": {}},
     "qwen25-32b-chat": {"cls": Qwen25LLMBackbone, "kwargs": {}},
-    "qwen3-8b-chat": {"cls": Qwen3LLMBackbone, "kwargs": {}},
 }
 
 # fmt: on
@@ -154,22 +144,6 @@ def get_vlm(
 ) -> PrismaticVLM:
     """Lightweight wrapper around initializing a VLM, mostly for future-proofing (if one wants to add a new VLM)."""
     return PrismaticVLM(
-        model_id,
-        vision_backbone,
-        llm_backbone,
-        enable_mixed_precision_training=enable_mixed_precision_training,
-        arch_specifier=arch_specifier,
-    )
-
-def get_wm_vlm(
-    model_id: str,
-    arch_specifier: str,
-    vision_backbone: VisionBackbone,
-    llm_backbone: LLMBackbone,
-    enable_mixed_precision_training: bool = True,
-) -> WM_VLM:
-    """Lightweight wrapper around initializing a WM_VLM, mostly for future-proofing (if one wants to add a new VLM)."""
-    return WM_VLM(
         model_id,
         vision_backbone,
         llm_backbone,

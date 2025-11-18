@@ -23,9 +23,9 @@ Run with:
 
 import json
 import os
-from dataclasses import dataclass, field # type: ignore
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Tuple, Union # type: ignore
+from typing import Optional, Tuple, Union
 
 import draccus
 import torch
@@ -34,7 +34,8 @@ import yaml
 
 # Register Path encoder for draccus
 draccus.encode.register(Path, lambda p: str(p))
-
+import sys
+sys.path.append('.')
 from prismatic.conf import DatasetConfig, DatasetRegistry, ModelConfig, ModelRegistry
 from prismatic.models import get_llm_backbone_and_tokenizer, get_vision_backbone_and_transform, get_vlm
 from prismatic.overwatch import initialize_overwatch

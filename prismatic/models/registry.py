@@ -685,12 +685,12 @@ MODEL_REGISTRY = {
             "train_epochs": 1,
         }
     },
-    
-    "prism-svd+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
+
+    "dyva-svd+7b": {
+        "model_id": "dyva-svd+7b",
+        "names": ["DyVA-SVD 7B"],
         "description": {
-            "name": "SigLIP Prism 7B",
+            "name": "SVD-only DyVA 7B",
             "optimization_procedure": "single-stage",
             "visual_representation": "SVD @ 448px",
             "image_processing": "Naive Resize",
@@ -699,11 +699,11 @@ MODEL_REGISTRY = {
             "train_epochs": 2,
         }
     },
-    "prism-svd_unet+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
+    "dyva_siglip+7b": {
+        "model_id": "dyva_siglip+7b",
+        "names": ["DyVA-SigLIP 7B"],
         "description": {
-            "name": "SigLIP Prism 7B",
+            "name": "SigLIP DyVA 7B",
             "optimization_procedure": "single-stage",
             "visual_representation": "SVD @ 448px",
             "image_processing": "Naive Resize",
@@ -712,11 +712,24 @@ MODEL_REGISTRY = {
             "train_epochs": 2,
         }
     },
-    "prism-svd_dual_dino_siglip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
+    "dyva_siglip_qwen+7b": {
+        "model_id": "dyva_siglip_qwen+7b",
+        "names": ["DyVA-SigLIP-Qwen 7B"],
         "description": {
-            "name": "SigLIP Prism 7B",
+            "name": "SigLIP DyVA Qwen 7B",
+            "optimization_procedure": "single-stage",
+            "visual_representation": "SVD @ 448px",
+            "image_processing": "Naive Resize",
+            "language_model": "Qwen 2.5 7B Chat",
+            "datasets": ["LLaVa v1.5 Instruct"],
+            "train_epochs": 2,
+        }
+    },
+    "dyva_dino+7b": {
+        "model_id": "dyva_dino+7b",
+        "names": ["DyVA-DINOv2 7B"],
+        "description": {
+            "name": "DINOv2 DyVA 7B",
             "optimization_procedure": "single-stage",
             "visual_representation": "SVD @ 448px",
             "image_processing": "Naive Resize",
@@ -725,115 +738,11 @@ MODEL_REGISTRY = {
             "train_epochs": 2,
         }
     },
-    "prism-svd_dual_siglip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
+    "dyva_clip+7b": {
+        "model_id": "dyva_clip+7b",
+        "names": ["DyVA-CLIP 7B"],
         "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd_dual_dino+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd_dual_clip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd_vae+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd_clip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd-siglip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd-dino+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd-dino-siglip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
-            "optimization_procedure": "single-stage",
-            "visual_representation": "SVD @ 448px",
-            "image_processing": "Naive Resize",
-            "language_model": "Llama-2 7B",
-            "datasets": ["LLaVa v1.5 Instruct"],
-            "train_epochs": 2,
-        }
-    },
-    "prism-svd_dino_clip+7b": {
-        "model_id": "prism-dinosiglip+7b",
-        "names": ["Prism-SigLIP 7B"],
-        "description": {
-            "name": "SigLIP Prism 7B",
+            "name": "CLIP DyVA 7B",
             "optimization_procedure": "single-stage",
             "visual_representation": "SVD @ 448px",
             "image_processing": "Naive Resize",

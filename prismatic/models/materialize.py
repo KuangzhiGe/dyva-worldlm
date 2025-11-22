@@ -9,7 +9,7 @@ from typing import Optional, Tuple # type: ignore
 
 from transformers import PreTrainedTokenizerBase
 
-from prismatic.models.backbones.llm import LLaMa2LLMBackbone, LLMBackbone, MistralLLMBackbone, PhiLLMBackbone, Qwen25LLMBackbone, Qwen3LLMBackbone
+from prismatic.models.backbones.llm import LLaMa2LLMBackbone, LLMBackbone, MistralLLMBackbone, PhiLLMBackbone, Qwen25LLMBackbone
 from prismatic.overwatch import initialize_overwatch
 # Initialize Overwatch =>> Wraps `logging.Logger`
 overwatch = initialize_overwatch(__name__)
@@ -17,6 +17,8 @@ from prismatic.models.backbones.vision import (
     CLIPViTBackbone,
     SVDVisionBackbone,
     DyVAVisionBackbone,
+    CogVideoXVisionBackbone,
+    DyVACogVideoXVisionBackbone,
     DinoCLIPViTBackbone,
     DinoSigLIPViTBackbone,
     DinoV2ViTBackbone,
@@ -58,6 +60,10 @@ VISION_BACKBONES = {
     "dyva_siglip": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
     "dyva_dino": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
     "dyva_clip": {"cls": DyVAVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_cogvideox": {"cls": CogVideoXVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_dit_siglip": {"cls": DyVACogVideoXVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_dit_dino": {"cls": DyVACogVideoXVisionBackbone, "kwargs": {"default_image_size": 224}},
+    "dyva_dit_clip": {"cls": DyVACogVideoXVisionBackbone, "kwargs": {"default_image_size": 224}},
 }
 
 

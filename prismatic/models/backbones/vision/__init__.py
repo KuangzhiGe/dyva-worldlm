@@ -7,3 +7,5 @@ from .in1k_vit import IN1KViTBackbone
 from .siglip_vit import SigLIPViTBackbone
 from .dyva_svd import SVDVisionBackbone
 from .dyva import DyVAVisionBackbone
+from .dyva_cogvideox import CogVideoXVisionBackbone
+from .dyva_dit import DyVACogVideoXVisionBackbone

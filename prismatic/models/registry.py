@@ -699,6 +699,32 @@ MODEL_REGISTRY = {
             "train_epochs": 2,
         }
     },
+    "dyva-cogvideox+7b": {
+        "model_id": "dyva-cogvideox+7b",
+        "names": ["DyVA-CogVideoX 7B"],
+        "description": {
+            "name": "CogVideoX-only DyVA 7B",
+            "optimization_procedure": "single-stage",
+            "visual_representation": "CogVideoX @ 224px",
+            "image_processing": "Naive Resize",
+            "language_model": "Llama-2 7B",
+            "datasets": ["LLaVa v1.5 Instruct"],
+            "train_epochs": 2,
+        }
+    },
+    "dyva-dit+7b": {
+        "model_id": "dyva-dit+7b",
+        "names": ["DyVA-DiT 7B"],
+        "description": {
+            "name": "DyVA-DiT 7B",
+            "optimization_procedure": "single-stage",
+            "visual_representation": "CogVideoX @ 224px",
+            "image_processing": "Naive Resize",
+            "language_model": "Llama-2 7B",
+            "datasets": ["LLaVa v1.5 Instruct"],
+            "train_epochs": 2,
+        }
+    },
     "dyva_siglip+7b": {
         "model_id": "dyva_siglip+7b",
         "names": ["DyVA-SigLIP 7B"],

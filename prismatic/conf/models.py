@@ -498,6 +498,24 @@ class DyVA_7B_svd(Exp_7B_One_Stage):
     finetune_epochs: int = 1
 
 @dataclass
+class DyVA_7B_cogvideox(Exp_7B_One_Stage):
+    model_id: str = "dyva_cogvideox+7b"
+    vision_backbone_id: str = "dyva_cogvideox"
+    image_resize_strategy: str = "resize-naive"
+    llm_backbone_id: str = "llama2-7b-pure"
+    arch_specifier: str = "no-align+fused-gelu-mlp"
+    finetune_epochs: int = 1
+
+@dataclass
+class DyVA_7B_DiT(Exp_7B_One_Stage):
+    model_id: str = "dyva_dit_siglip+7b"
+    vision_backbone_id: str = "dyva_dit_siglip"
+    image_resize_strategy: str = "resize-naive"
+    llm_backbone_id: str = "llama2-7b-pure"
+    arch_specifier: str = "no-align+dual"
+    finetune_epochs: int = 1
+
+@dataclass
 class DyVA_7B_siglip(Exp_7B_One_Stage):
     model_id: str = "dyva_siglip+7b"
     vision_backbone_id: str = "dyva_siglip"
@@ -526,7 +544,7 @@ class DyVA_7B_dino(Exp_7B_One_Stage):
 
 @dataclass
 class DyVA_7B_clip(Exp_7B_One_Stage):
-    model_id: str = "dyva-clip+7b"
+    model_id: str = "dyva_clip+7b"
     vision_backbone_id: str = "dyva_clip"
     image_resize_strategy: str = "resize-naive"
     llm_backbone_id: str = "llama2-7b-pure"
@@ -615,6 +633,8 @@ class ModelRegistry(Enum):
     DYVA_SIGLIP_QWEN_7B = DyVA_7B_siglip_qwen
     DYVA_DINO_7B = DyVA_7B_dino
     DYVA_CLIP_7B = DyVA_7B_clip
+    DYVA_COGVIDEOX_7B = DyVA_7B_cogvideox
+    DYVA_DiT_7B = DyVA_7B_DiT
 
     @property
     def model_id(self) -> str:
